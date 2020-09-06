@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+        integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+    <script>
+        function getSpace(s, l) {
+            var ret = "";
+            while (s.length + ret.length < l) {
+                ret = ret + " ";
+            }
+            return ret;
+        }
+
+        location.querystring = (function () {
+            // The return is a collection of key/value pairs
+            var result = {};
+
+            // Gets the query string with a preceeding '?'
+            var querystring = location.search;
+
+            // document.location.search is empty if a query string is absent
+            if (!querystring)
+                return result;
+
+            // substring(1) to remove the '?'
+            var pairs = querystring.substring(1).split("&");
+            var splitPair;
+
+            // Load the key/values of the return collection
+            for (var i = 0; i < pairs.length; i++) {
+                splitPair = pairs[i].split("=");
+                result[splitPair[0]] = splitPair[1];
+            }
+
+            return result;
+        })();
+
+        function createRequestObject() {
+            var request_o; //declare the variable to hold the object.
+            var browser = navigator.appName; //find the browser name
+            if (browser == "Microsoft Internet Explorer") {
+                /* Create the object using MSIE's method */
+                request_o = new ActiveXObject("Microsoft.XMLHTTP");
+            } else {
+                /* Create the object using other browser's method */
+                request_o = new XMLHttpRequest();
+            }
+            return request_o; //return the object
+        }
+
+        var http = createRequestObject();
+
+        function getList() {
+            http.open('get', location.protocol + '//' + location.hostname);
+            http.onreadystatechange = handleList;
+            http.send(null);
+        }
+
+        function handleList() {
+            if (http.readyState == 4) {
+                var response = http.responseXML;
+                filex = response.getElementsByTagName('Contents');
+                fileData = [];
+                for (i = 0; i < filex.length; i++) {
+                    const size = filex[i].getElementsByTagName('Size')[0].firstChild.data;
+                    const name = filex[i].getElementsByTagName('Key')[0].firstChild.data;
+                    const lastmod = filex[i].getElementsByTagName('LastModified')[0].firstChild.data;
+                    fileData.push({
+                        name,
+                        size,
+                        lastmod
+                    });
+                }
+
+                var specialTbody = document.querySelector("#special_list");
+                addDataToTbody(specialTbody, fileData);
+            }
+        }
+
+        function addDataToTbody(nl, data) {
+            let row = 0;
+            data.forEach((d, i) => {
+                if (d.name.endsWith('.mp3')) {
+                    const link = location.protocol + '//' + location.hostname + '/' + d.name;
+                    const fileName = d.name.replace('.mp3', '').split('/');
+                    const folder = fileName[0];
+                    const artists = fileName[1].split('-')[0];
+                    const title = fileName[1].split('-')[1];
+
+                    var cardNode = document.createElement("li");
+                    cardNode.setAttribute('class', 'list-group-item');
+                    cardNode.innerHTML = `
+                  <tr>
+                    <td>
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title my-0 py-0 ml-2">${title}</h5>
+                                <p class="text-muted my-0 py-0 ml-2">${artists}</p>
+                                <small class="mt-0 pt-0 ml-2">${folder}</small>
+                                <audio controls class="w-100 mt-2">
+                                    <source src="${link}" type="audio/mpeg">
+                                    Your browser does not support the audio element.
+                                </audio>
+                            </div>
+                        </div>
+                        </td>
+                    </tr>
+                    `;
+
+                    nl.appendChild(cardNode);
+                }
+            });
+        }
+    </script>
+    <style>
+        .special-list {
+            height: 100vh;
+            overflow-y: scroll;
+        }
+    </style>
+</head>
+
+<body onLoad="getList();">
+    <div class="container">
+        <div class="row d-flex justify-content-center">
+            <div class="col-12 col-md-5">
+                <img src="https://christianlifedfw.com/wp-content/uploads/2014/06/logo-web.png" alt="" srcset="">
+                <h2 class="text-center">Christian Life Tabernacle - specials</h2>
+                <ul class="list-group list-group-flush special-list" id="special_list">
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
